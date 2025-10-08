@@ -162,7 +162,7 @@ export default function TodoApp() {
     switch (priority) {
       case 'emergency': return 'bg-red-100'
       case 'urgent': return 'bg-orange-50'
-      case 'normal': return 'bg-yellow-50'
+      case 'normal': return 'bg-white'
       case 'low': return 'bg-green-50'
     }
   }
@@ -233,15 +233,24 @@ export default function TodoApp() {
           className="bg-white rounded-lg shadow-lg border-2 border-gray-300"
           style={{
             boxShadow: '0 8px 25px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05)',
-            background: 'linear-gradient(135deg, #ffffff 0%, #fefefe 100%)'
+            background: `
+              linear-gradient(135deg, #ffffff 0%, #fefefe 100%),
+              repeating-linear-gradient(
+                transparent 0px,
+                transparent 30px,
+                #e5e7eb 30px,
+                #e5e7eb 31px
+              )
+            `
           }}
         >
           <div className="p-6">
-            <div className="space-y-1 mb-4">
+            {/* TodoList - 완료된 할 일들이 표시되는 영역 */}
+            <div className="space-y-0 mb-4">
               {sortedTodos.map((todo, index) => (
                 <div 
                   key={todo.id}
-                  className={`flex items-center py-2 hover:bg-gray-50 rounded ${getPriorityStyle(todo.priority)}`}
+                  className={`flex items-center py-3 hover:bg-gray-50 border-b-2 border-dashed border-gray-200 ${getPriorityStyle(todo.priority)}`}
                   style={{ paddingLeft: getDepthPadding(todo.depth) }}
                 >
                   <div className="flex items-center text-gray-400 mr-3">
@@ -249,8 +258,8 @@ export default function TodoApp() {
                       <div key={i} className="w-1 h-1 bg-gray-300 rounded-full mx-1" />
                     ))}
                   </div>
-                  <span className={`text-sm font-medium mr-2 px-1 rounded min-w-10 text-center ${getPriorityTextStyle(todo.priority)}`}>
-                    {getPriorityLabel(todo.priority)}
+                  <span className={`text-sm font-bold mr-2 min-w-12 text-center ${getPriorityTextStyle(todo.priority)} bg-white rounded px-1`}>
+                    [{getPriorityLabel(todo.priority)}]
                   </span>
                   <input
                     type="checkbox"
@@ -267,7 +276,8 @@ export default function TodoApp() {
               ))}
             </div>
 
-            <div className="border-t-2 border-dashed border-gray-300 pt-4">
+            {/* TodoInput - 새로운 할 일을 입력하는 영역 */}
+            <div className="border-gray-300 pt-4">
               <div 
                 className={`flex items-center border-t-2 border-b-2 border-dashed border-gray-300 py-2 ${getPriorityStyle(inputPriority)} rounded-md`}
                 style={{ paddingLeft: getDepthPadding(inputDepth) }}
