@@ -249,7 +249,7 @@ export default function TodoApp() {
                       <div key={i} className="w-1 h-1 bg-gray-300 rounded-full mx-1" />
                     ))}
                   </div>
-                  <span className={`text-xs font-medium mr-2 px-1 rounded min-w-10 text-center ${getPriorityTextStyle(todo.priority)}`}>
+                  <span className={`text-sm font-medium mr-2 px-1 rounded min-w-10 text-center ${getPriorityTextStyle(todo.priority)}`}>
                     {getPriorityLabel(todo.priority)}
                   </span>
                   <input
