@@ -85,6 +85,8 @@ export default function TodoApp() {
     
     if (updated[todoIndex].completed) {
       updateChildrenCompletion(updated, todoIndex, true)
+    } else {
+      updateChildrenCompletion(updated, todoIndex, false)
     }
     
     updateParentCompletion(updated)
