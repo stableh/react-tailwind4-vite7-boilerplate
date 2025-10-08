@@ -101,11 +101,9 @@ export default function TodoApp() {
       
       if (todo.depth <= parentTodo.depth) break
       
-      if (todo.depth === parentTodo.depth + 1) {
+      // 모든 하위 깊이의 자식들을 처리 (바로 다음 깊이가 아니어도)
+      if (todo.depth > parentTodo.depth) {
         todoList[i] = { ...todo, completed }
-        if (completed) {
-          updateChildrenCompletion(todoList, i, completed)
-        }
       }
     }
   }
