@@ -18,6 +18,10 @@ export default function TodoApp() {
   const [inputValue, setInputValue] = useState('')
   const [inputDepth, setInputDepth] = useState(0)
   const [inputPriority, setInputPriority] = useState<Priority>('normal')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editValue, setEditValue] = useState('')
+  const [editDepth, setEditDepth] = useState(0)
+  const [editPriority, setEditPriority] = useState<Priority>('normal')
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('ko-KR', {
@@ -118,6 +122,62 @@ export default function TodoApp() {
     setTodos(updated)
   }
 
+  const startEdit = (todo: Todo) => {
+    setEditingId(todo.id)
+    setEditValue(todo.text)
+    setEditDepth(todo.depth)
+    setEditPriority(todo.priority)
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+    setEditValue('')
+    setEditDepth(0)
+    setEditPriority('normal')
+  }
+
+  const saveEdit = () => {
+    if (!editValue.trim() || !editingId) return
+
+    const updated = todos.map(todo => 
+      todo.id === editingId 
+        ? { ...todo, text: editValue.trim(), depth: editDepth, priority: editPriority }
+        : todo
+    )
+    
+    setTodos(updated)
+    cancelEdit()
+  }
+
+  const handleEditKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Tab') {
+      e.preventDefault()
+      if (e.shiftKey) {
+        setEditDepth(Math.max(0, editDepth - 1))
+      } else {
+        setEditDepth(Math.min(2, editDepth + 1))
+      }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      const priorities: Priority[] = ['low', 'normal', 'urgent', 'emergency']
+      const currentIndex = priorities.indexOf(editPriority)
+      const nextIndex = (currentIndex + 1) % priorities.length
+      setEditPriority(priorities[nextIndex])
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      const priorities: Priority[] = ['low', 'normal', 'urgent', 'emergency']
+      const currentIndex = priorities.indexOf(editPriority)
+      const prevIndex = currentIndex === 0 ? priorities.length - 1 : currentIndex - 1
+      setEditPriority(priorities[prevIndex])
+    } else if (e.key === 'Backspace' && editValue === '' && editDepth > 0) {
+      setEditDepth(editDepth - 1)
+    } else if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+      saveEdit()
+    } else if (e.key === 'Escape') {
+      cancelEdit()
+    }
+  }
+
   const updateChildrenCompletion = (todoList: Todo[], parentIndex: number, completed: boolean) => {
     const parentTodo = todoList[parentIndex]
     
@@ -210,12 +270,7 @@ export default function TodoApp() {
     }
   }
 
-  const sortedTodos = [...todos].sort((a, b) => {
-    if (a.depth !== b.depth) return 0
-    
-    const priorityOrder = { emergency: 0, urgent: 1, normal: 2, low: 3 }
-    return priorityOrder[a.priority] - priorityOrder[b.priority]
-  })
+  const sortedTodos = todos
 
   return (
     <div 
@@ -277,35 +332,63 @@ export default function TodoApp() {
               {sortedTodos.map((todo) => (
                 <div 
                   key={todo.id}
-                  className={`group flex items-center py-3 hover:bg-gray-50 border-b-2 border-dashed border-gray-200 ${getPriorityStyle(todo.priority)}`}
-                  style={{ paddingLeft: getDepthPadding(todo.depth) }}
+                  className={`group flex items-center py-3 hover:bg-gray-50 border-b-2 border-dashed border-gray-200 ${editingId === todo.id ? getPriorityStyle(editPriority) : getPriorityStyle(todo.priority)}`}
+                  style={{ paddingLeft: editingId === todo.id ? getDepthPadding(editDepth) : getDepthPadding(todo.depth) }}
                 >
-                  <div className="flex items-center text-gray-400 mr-3">
-                    {Array.from({ length: todo.depth + 1 }, (_, i) => (
-                      <div key={i} className="w-1 h-1 bg-gray-300 rounded-full mx-1" />
-                    ))}
-                  </div>
-                  <span className={`text-sm font-bold mr-2 min-w-12 text-center ${getPriorityTextStyle(todo.priority)} bg-white rounded px-1`}>
-                    [{getPriorityLabel(todo.priority)}]
-                  </span>
-                  <input
-                    type="checkbox"
-                    checked={todo.completed}
-                    onChange={() => toggleTodo(todo.id)}
-                    className="mr-3 h-4 w-4 text-blue-600 rounded"
-                  />
-                  <span 
-                    className={`flex-1 ${todo.completed ? 'line-through text-gray-500' : getPriorityTextStyle(todo.priority)} ${getDepthFontWeight(todo.depth)}`}
-                  >
-                    {todo.text}
-                  </span>
-                  <button
-                    onClick={() => deleteTodo(todo.id)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full"
-                    title="삭제"
-                  >
-                    <Eraser className="w-4 h-4" />
-                  </button>
+                  {editingId === todo.id ? (
+                    // 편집 모드 UI
+                    <>
+                      <div className="flex items-center text-gray-400 mr-2">
+                        {Array.from({ length: editDepth + 1 }, (_, i) => (
+                          <div key={i} className="w-2 h-2 bg-gray-400 rounded-full mx-1" />
+                        ))}
+                      </div>
+                      <span className={`text-sm font-bold mr-2 min-w-12 text-center ${getPriorityTextStyle(editPriority)} bg-white rounded px-1`}>
+                        [{getPriorityLabel(editPriority)}]
+                      </span>
+                      <div className="w-px h-6 bg-gray-400 border-r border-dashed border-gray-400 mr-2"></div>
+                      <input
+                        type="text"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onKeyDown={handleEditKeyDown}
+                        onBlur={saveEdit}
+                        className="flex-1 outline-none text-lg bg-transparent font-medium"
+                        autoFocus
+                      />
+                    </>
+                  ) : (
+                    // 일반 모드 UI
+                    <>
+                      <div className="flex items-center text-gray-400 mr-3">
+                        {Array.from({ length: todo.depth + 1 }, (_, i) => (
+                          <div key={i} className="w-1 h-1 bg-gray-300 rounded-full mx-1" />
+                        ))}
+                      </div>
+                      <span className={`text-sm font-bold mr-2 min-w-12 text-center ${getPriorityTextStyle(todo.priority)} bg-white rounded px-1`}>
+                        [{getPriorityLabel(todo.priority)}]
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={todo.completed}
+                        onChange={() => toggleTodo(todo.id)}
+                        className="mr-3 h-4 w-4 text-blue-600 rounded"
+                      />
+                      <span 
+                        className={`flex-1 ${todo.completed ? 'line-through text-gray-500' : getPriorityTextStyle(todo.priority)} ${getDepthFontWeight(todo.depth)} cursor-pointer`}
+                        onDoubleClick={() => startEdit(todo)}
+                      >
+                        {todo.text}
+                      </span>
+                      <button
+                        onClick={() => deleteTodo(todo.id)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full"
+                        title="삭제"
+                      >
+                        <Eraser className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
